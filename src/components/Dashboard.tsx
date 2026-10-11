@@ -12,57 +12,23 @@ import {
   Activity,
   Layers,
   Terminal,
-  Zap
+  FlaskConical,
+  CheckCircle2,
+  Wrench
 } from 'lucide-react';
-
-export interface ScenarioOverviewItem {
-  id: string;
-  name: string;
-  owaspCategory: string;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
-  targetTool: string;
-  description: string;
-}
-
-const ATTACK_SCENARIOS: ScenarioOverviewItem[] = [
-  {
-    id: 'sc-rag',
-    name: 'Indirect RAG Poisoning',
-    owaspCategory: 'LLM01 - Prompt Injection',
-    severity: 'CRITICAL',
-    targetTool: 'read_file(path: "secret_passwords.txt")',
-    description: 'Document injection embedding malicious instructions into vector knowledge context.',
-  },
-  {
-    id: 'sc-agency',
-    name: 'Excessive Tool Agency',
-    owaspCategory: 'LLM06 - Excessive Agency',
-    severity: 'HIGH',
-    targetTool: 'delete_database_records()',
-    description: 'Agent executes destructive mutations without human authorization boundary.',
-  },
-  {
-    id: 'sc-memory',
-    name: 'Memory Context Pollution',
-    owaspCategory: 'LLM08 - Vector Context Pollution',
-    severity: 'HIGH',
-    targetTool: 'read_restricted_files()',
-    description: 'Persistent conversation state injected with privileged credential exfiltration triggers.',
-  },
-];
+import type { NavView } from '../types/navigation';
 
 interface DashboardProps {
   isSecured?: boolean;
   onToggleSecured?: (secured: boolean) => void;
-  onSelectScenarioRow?: (scenarioName: string) => void;
+  onChangeView?: (view: NavView) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   isSecured: controlledSecured,
   onToggleSecured,
-  onSelectScenarioRow,
+  onChangeView,
 }) => {
-  // Support both controlled and uncontrolled state
   const [internalSecured, setInternalSecured] = useState<boolean>(false);
   const isSecured = controlledSecured !== undefined ? controlledSecured : internalSecured;
 
@@ -75,7 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  // 1. Shifted Mock Data based on isSecured state (Requirement 1)
+  // Shifted Mock Data based on isSecured state
   const exploitRate = isSecured ? 0 : 100;
   const defenseScore = isSecured ? 94 : 12;
   const criticalThreats = isSecured ? 0 : 3;
@@ -88,41 +54,48 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const strokeDashoffset = circumference - (defenseScore / 100) * circumference;
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto bg-zinc-950 text-zinc-100 p-4 sm:p-6 space-y-6 select-none font-sans antialiased">
-      {/* =========================================================================
-          1. HEADER & INTERACTIVE TOGGLE (Requirement 4)
-      ========================================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/90 text-zinc-200 shadow-md">
-            <Activity className="h-5 w-5 text-zinc-300" />
+    <div className="flex h-full w-full flex-col overflow-y-auto bg-zinc-950 text-zinc-100 p-6 space-y-6 select-none font-sans antialiased">
+      {/* 1. Header Strip */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-wisteria-300/30 bg-wisteria-dim text-wisteria shadow-[0_0_20px_rgba(211,211,255,0.12)]">
+            <Activity className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-zinc-100">
+              <h1 className="text-xl font-bold tracking-tight text-zinc-100">
                 Security Evaluation Command Center
               </h1>
-              <span className="rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 font-mono text-[10px] text-zinc-400">
-                Live Telemetry
+              <span className="rounded-md border border-wisteria-300/30 bg-wisteria-dim px-2 py-0.5 font-mono text-[10px] font-semibold text-wisteria">
+                Live Posture
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Continuous agent risk scoring, exploit exposure analysis, and defense validation.
+              High-level posture telemetry, exploit exposure scoring, and continuous firewall benchmarks.
             </p>
           </div>
         </div>
 
-        {/* Sleek Interactive Toggle: "Unprotected" vs "Secured State" (Requirement 4) */}
-        <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/80 p-1.5 shadow-sm">
-          <div className="flex items-center gap-2 px-2">
+        {/* State Toggle: Unprotected vs Secured State */}
+        <div className="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/50 p-1.5 backdrop-blur-sm shadow-sm">
+          <div className="flex items-center gap-2 px-2.5">
             {isSecured ? (
-              <Lock className="h-3.5 w-3.5 text-emerald-400" />
+              <Lock className="h-4 w-4 text-wisteria" />
             ) : (
-              <Unlock className="h-3.5 w-3.5 text-rose-400" />
+              <Unlock className="h-4 w-4 text-cherry" />
             )}
-            <span className="font-mono text-[11px] font-semibold text-zinc-300">
-              {isSecured ? 'Secured State' : 'Unprotected'}
-            </span>
+            <div className="text-left">
+              <span className="block font-mono text-[11px] font-semibold text-zinc-200">
+                {isSecured ? 'Secured State' : 'Unprotected'}
+              </span>
+              <span
+                className={`block font-mono text-[9px] ${
+                  isSecured ? 'text-wisteria' : 'text-cherry'
+                }`}
+              >
+                {isSecured ? 'Firewall Active' : 'Zero Inspection'}
+              </span>
+            </div>
           </div>
 
           <button
@@ -131,12 +104,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             aria-checked={isSecured}
             onClick={handleToggle}
             className={`relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              isSecured ? 'bg-emerald-500' : 'bg-zinc-700'
+              isSecured ? 'bg-wisteria' : 'bg-zinc-700'
             }`}
             title="Toggle Unprotected vs Secured State"
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out mt-0.5 ml-0.5 ${
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-zinc-950 shadow-md transition duration-200 ease-in-out mt-0.5 ml-0.5 ${
                 isSecured ? 'translate-x-6' : 'translate-x-0'
               }`}
             />
@@ -144,21 +117,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* =========================================================================
-          2. TOP KPI SUMMARY CARDS (Grid 3 Columns - Requirement 2)
-      ========================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* CARD 1: Exploit Success Rate */}
-        <div className="relative flex flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 shadow-sm transition-all duration-300">
+      {/* 2. Top KPI Summary Cards (Spacious, Uncluttered Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: Exploit Success Rate */}
+        <div className="relative flex flex-col justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur-sm shadow-sm transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-zinc-400">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
               Exploit Success Rate
             </span>
             <div
-              className={`flex h-7 w-7 items-center justify-center rounded-lg border ${
+              className={`flex h-7 w-7 items-center justify-center rounded-lg border transition-colors ${
                 isSecured
-                  ? 'border-emerald-900/50 bg-emerald-950/40 text-emerald-400'
-                  : 'border-rose-900/50 bg-rose-950/40 text-rose-400'
+                  ? 'border-wisteria-300/40 bg-wisteria-dim text-wisteria'
+                  : 'border-cherry-300/40 bg-cherry-dim text-cherry'
               }`}
             >
               {isSecured ? (
@@ -169,18 +140,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          <div className="my-3 flex items-baseline gap-3">
-            {/* Show Red 100% or Green 0% */}
+          <div className="my-4 flex items-baseline gap-3">
             <span
-              className={`font-mono text-3xl font-extrabold tracking-tight transition-colors duration-300 ${
-                isSecured ? 'text-emerald-400' : 'text-rose-400'
+              className={`font-mono text-4xl font-extrabold tracking-tight transition-colors duration-300 ${
+                isSecured ? 'text-wisteria' : 'text-cherry'
               }`}
             >
               {exploitRate}%
             </span>
             <span
               className={`inline-flex items-center gap-1 font-mono text-[11px] font-semibold ${
-                isSecured ? 'text-emerald-400' : 'text-rose-400'
+                isSecured ? 'text-wisteria' : 'text-cherry'
               }`}
             >
               {isSecured ? (
@@ -197,42 +167,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
 
-          <div className="border-t border-zinc-800/80 pt-2 text-[11px] text-zinc-400">
+          <div className="border-t border-zinc-800/60 pt-2.5 text-[11px] font-mono">
             {isSecured ? (
-              <span className="text-emerald-400/90 font-mono">
-                ● Policy Firewall enforcing tool allowlist
+              <span className="text-wisteria flex items-center gap-1.5">
+                <CheckCircle2 className="h-3 w-3" />
+                Policy Firewall enforcing strict tool allowlist
               </span>
             ) : (
-              <span className="text-rose-400/90 font-mono">
-                ● Zero inspection active — all exploits execute
+              <span className="text-cherry flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3" />
+                Zero inspection active — all exploits execute
               </span>
             )}
           </div>
         </div>
 
-        {/* CARD 2: Vulnerability Severity Breakdown */}
-        <div className="relative flex flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 shadow-sm transition-all duration-300">
+        {/* Card 2: Vulnerability Severity Breakdown */}
+        <div className="relative flex flex-col justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur-sm shadow-sm transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-zinc-400">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
               Vulnerability Breakdown
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400">
               <ShieldAlert className="h-4 w-4" />
             </div>
           </div>
 
-          {/* Clean pill badges for CRITICAL, HIGH, MEDIUM */}
-          <div className="my-3 flex flex-wrap items-center gap-2">
+          <div className="my-4 flex flex-wrap items-center gap-2">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs font-bold transition-all ${
                 criticalThreats > 0
-                  ? 'border-rose-800/80 bg-rose-950/60 text-rose-300 shadow-sm'
-                  : 'border-zinc-800 bg-zinc-900/60 text-zinc-500'
+                  ? 'border-cherry-300/40 bg-cherry-dim text-cherry shadow-[0_0_12px_rgba(255,183,197,0.15)]'
+                  : 'border-zinc-800 bg-zinc-950/60 text-zinc-500'
               }`}
             >
               <span
                 className={`h-2 w-2 rounded-full ${
-                  criticalThreats > 0 ? 'bg-rose-400 animate-pulse' : 'bg-zinc-600'
+                  criticalThreats > 0 ? 'bg-cherry animate-pulse' : 'bg-zinc-600'
                 }`}
               />
               <span>{criticalThreats} CRITICAL</span>
@@ -241,8 +212,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs font-bold transition-all ${
                 highThreats > 0
-                  ? 'border-amber-800/80 bg-amber-950/60 text-amber-300 shadow-sm'
-                  : 'border-zinc-800 bg-zinc-900/60 text-zinc-500'
+                  ? 'border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-sm'
+                  : 'border-zinc-800 bg-zinc-950/60 text-zinc-500'
               }`}
             >
               <span
@@ -253,52 +224,53 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span>{highThreats} HIGH</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 font-mono text-xs font-medium text-zinc-500">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 font-mono text-xs font-medium text-zinc-500">
               <span className="h-2 w-2 rounded-full bg-zinc-600" />
               <span>{mediumThreats} MEDIUM</span>
             </span>
           </div>
 
-          <div className="border-t border-zinc-800/80 pt-2 text-[11px] text-zinc-400">
+          <div className="border-t border-zinc-800/60 pt-2.5 text-[11px] font-mono">
             {isSecured ? (
-              <span className="font-mono text-emerald-400">
-                ✓ 5 of 5 threats neutralized by policy
+              <span className="text-wisteria flex items-center gap-1.5">
+                <CheckCircle2 className="h-3 w-3" />
+                All 5 threats neutralized by policy shield
               </span>
             ) : (
-              <span className="font-mono text-rose-400">
-                ⚠ 5 active unprotected attack vectors
+              <span className="text-cherry flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3" />
+                5 active unmitigated attack vectors detected
               </span>
             )}
           </div>
         </div>
 
-        {/* CARD 3: Defense Effectiveness Score */}
-        <div className="relative flex flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 shadow-sm transition-all duration-300">
+        {/* Card 3: Defense Effectiveness Score */}
+        <div className="relative flex flex-col justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur-sm shadow-sm transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-zinc-400">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
               Defense Effectiveness
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400">
               <Shield className="h-4 w-4" />
             </div>
           </div>
 
-          {/* Circular Progress & Bar Indicator */}
-          <div className="my-2 flex items-center justify-between gap-4">
+          <div className="my-3 flex items-center justify-between gap-4">
             <div>
               <div className="flex items-baseline gap-2">
                 <span
-                  className={`font-mono text-3xl font-extrabold tracking-tight transition-colors duration-300 ${
-                    isSecured ? 'text-emerald-400' : 'text-rose-400'
+                  className={`font-mono text-4xl font-extrabold tracking-tight transition-colors duration-300 ${
+                    isSecured ? 'text-wisteria' : 'text-cherry'
                   }`}
                 >
                   {defenseScore}%
                 </span>
-                <span className="font-mono text-xs text-zinc-400">/ 100</span>
+                <span className="font-mono text-xs text-zinc-500">/ 100</span>
               </div>
               <p className="mt-1 text-xs text-zinc-400">
                 {isSecured
-                  ? 'Strong policy enforcement & permission isolation'
+                  ? 'Strong policy enforcement active'
                   : 'Vulnerable configuration — zero policy filtering'}
               </p>
             </div>
@@ -319,7 +291,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   cy="48"
                   r={circleRadius}
                   className={`transition-all duration-700 ease-out ${
-                    isSecured ? 'stroke-emerald-400' : 'stroke-rose-500'
+                    isSecured ? 'stroke-wisteria' : 'stroke-cherry'
                   }`}
                   strokeWidth="8"
                   strokeDasharray={circumference}
@@ -334,12 +306,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Simple Linear Progress Bar Indicator */}
-          <div className="mt-1 border-t border-zinc-800/80 pt-2">
+          <div className="mt-1 border-t border-zinc-800/60 pt-2.5">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
               <div
                 className={`h-full transition-all duration-700 ease-out ${
-                  isSecured ? 'bg-emerald-400' : 'bg-rose-500'
+                  isSecured ? 'bg-wisteria shadow-[0_0_8px_rgba(211,211,255,0.4)]' : 'bg-cherry'
                 }`}
                 style={{ width: `${defenseScore}%` }}
               />
@@ -348,133 +319,119 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* =========================================================================
-          3. ATTACK PATH & SCENARIO OVERVIEW TABLE (Requirement 3)
-      ========================================================================== */}
-      <div className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 shadow-sm overflow-hidden flex flex-col">
-        {/* Table Title Bar */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-800/80 px-5 py-3.5 bg-zinc-950/90">
-          <div className="flex items-center gap-2.5">
-            <Layers className="h-4 w-4 text-zinc-400" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-200">
-              Attack Path & Scenario Overview
-            </h3>
-            <span className="rounded border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
-              3 Evaluated Vectors
-            </span>
-          </div>
+      {/* 3. Quick Navigation & Security Posture Overview (Spacious Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1 min-h-0">
+        {/* Quick Diagnostic Modules */}
+        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur-sm shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-2">
+                <Layers className="h-4 w-4 text-wisteria" />
+                <span>Security Diagnostic Views</span>
+              </h3>
+              <span className="font-mono text-[10px] text-zinc-500">4 Modules</span>
+            </div>
 
-          <span className="text-[11px] font-mono text-zinc-500">
-            Click row to inspect live execution trace
-          </span>
-        </div>
-
-        {/* Responsive Table */}
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-zinc-800/80 bg-zinc-900/40 text-[11px] font-mono text-zinc-400">
-                <th className="py-2.5 px-4 font-semibold">Scenario Name</th>
-                <th className="py-2.5 px-4 font-semibold">OWASP Category</th>
-                <th className="py-2.5 px-4 font-semibold">Target Tool Vector</th>
-                <th className="py-2.5 px-4 font-semibold">Severity</th>
-                <th className="py-2.5 px-4 font-semibold text-right">Status</th>
-                <th className="py-2.5 px-3 font-semibold text-center w-12">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/60 font-sans">
-              {ATTACK_SCENARIOS.map((item) => {
-                const isMitigated = isSecured;
+            <div className="mt-4 space-y-2.5">
+              {[
+                {
+                  id: 'owasp' as NavView,
+                  title: 'OWASP Matrix Breakdown',
+                  desc: 'Comprehensive taxonomy across LLM01 - LLM10 vulnerability classes.',
+                  icon: Layers,
+                },
+                {
+                  id: 'regression' as NavView,
+                  title: 'Continuous Regression Suite',
+                  desc: 'Automated test assertions with 100% compliance benchmarking.',
+                  icon: FlaskConical,
+                },
+                {
+                  id: 'trace' as NavView,
+                  title: '4-Stage Execution Trace',
+                  desc: 'Inspect step-by-step agent decisions and tool interception.',
+                  icon: Terminal,
+                },
+                {
+                  id: 'permissions' as NavView,
+                  title: 'Excessive Agency Auditor',
+                  desc: 'Least-privilege verification for destructive capabilities.',
+                  icon: Wrench,
+                },
+              ].map((mod) => {
+                const Icon = mod.icon;
 
                 return (
-                  <tr
-                    key={item.id}
-                    onClick={() => onSelectScenarioRow?.(item.name)}
-                    className="group cursor-pointer hover:bg-zinc-900/70 transition-colors duration-150"
+                  <button
+                    key={mod.id}
+                    type="button"
+                    onClick={() => onChangeView?.(mod.id)}
+                    className="w-full flex items-center justify-between rounded-lg border border-zinc-800/70 bg-zinc-950/60 p-3 hover:border-wisteria-300/40 hover:bg-zinc-900/60 transition group cursor-pointer text-left"
                   >
-                    {/* Scenario Name & Description */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-zinc-100 group-hover:text-white transition flex items-center gap-2">
-                        <span>{item.name}</span>
-                        {isSecured ? (
-                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 opacity-80" />
-                        ) : (
-                          <AlertTriangle className="h-3.5 w-3.5 text-rose-400 opacity-80" />
-                        )}
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-400 group-hover:text-wisteria transition">
+                        <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <p className="mt-0.5 text-[11px] text-zinc-400 leading-snug">
-                        {item.description}
-                      </p>
-                    </td>
-
-                    {/* OWASP Category */}
-                    <td className="py-3.5 px-4 font-mono text-[11px] text-zinc-300">
-                      <span className="rounded bg-zinc-900 border border-zinc-800 px-2 py-0.5">
-                        {item.owaspCategory}
-                      </span>
-                    </td>
-
-                    {/* Target Tool Vector */}
-                    <td className="py-3.5 px-4 font-mono text-[11px] text-zinc-400">
-                      <div className="flex items-center gap-1.5 truncate max-w-xs">
-                        <Terminal className="h-3 w-3 text-zinc-500 flex-shrink-0" />
-                        <span className="text-zinc-300 truncate">{item.targetTool}</span>
+                      <div>
+                        <div className="text-xs font-semibold text-zinc-200 group-hover:text-wisteria transition">
+                          {mod.title}
+                        </div>
+                        <div className="text-[11px] text-zinc-500 line-clamp-1">
+                          {mod.desc}
+                        </div>
                       </div>
-                    </td>
-
-                    {/* Severity Badge */}
-                    <td className="py-3.5 px-4">
-                      {item.severity === 'CRITICAL' ? (
-                        <span className="inline-flex items-center gap-1 rounded border border-rose-800/70 bg-rose-950/60 px-2 py-0.5 font-mono text-[10px] font-bold text-rose-300">
-                          CRITICAL
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded border border-amber-800/70 bg-amber-950/60 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-300">
-                          HIGH
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Status: Red "Vulnerable" vs Green "Mitigated" (Requirement 1 & 3) */}
-                    <td className="py-3.5 px-4 text-right">
-                      {isMitigated ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-800/80 bg-emerald-950/60 px-2.5 py-0.5 font-mono text-[10px] font-bold text-emerald-300 shadow-sm">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                          Mitigated
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-800/80 bg-rose-950/60 px-2.5 py-0.5 font-mono text-[10px] font-bold text-rose-300 shadow-sm animate-pulse">
-                          <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
-                          Vulnerable
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Action Arrow Icon */}
-                    <td className="py-3.5 px-3 text-center">
-                      <div className="flex items-center justify-center text-zinc-500 group-hover:text-zinc-200 transition">
-                        <ChevronRight className="h-4 w-4 transform group-hover:translate-x-0.5 transition" />
-                      </div>
-                    </td>
-                  </tr>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-wisteria group-hover:translate-x-0.5 transition" />
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
-        {/* Table Footer Summary */}
-        <div className="flex h-10 flex-shrink-0 items-center justify-between border-t border-zinc-800/80 bg-zinc-950 px-5 text-[11px] font-mono text-zinc-400">
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-500">Security Posture:</span>
-            <span className={isSecured ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-              {isSecured ? 'Policy-Enforced Lockdown Active' : 'Unfiltered Agent Boundary Detected'}
-            </span>
+        {/* System Defense Health & Realtime Status */}
+        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur-sm shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-wisteria" />
+                <span>Realtime Firewall Posture</span>
+              </h3>
+              <span className="rounded border border-wisteria-300/30 bg-wisteria-dim px-2 py-0.5 font-mono text-[9px] text-wisteria">
+                Telemetry
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3 font-mono text-xs">
+              <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/80 p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-500 block">PATH ALLOWLIST RULE</span>
+                  <span className="text-zinc-200 font-semibold">/public/ & public_*.txt ONLY</span>
+                </div>
+                <span className="text-wisteria text-[11px] font-bold">ENFORCED</span>
+              </div>
+
+              <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/80 p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-500 block">RECURSIVE ANOMALY DETECTION</span>
+                  <span className="text-zinc-200 font-semibold">4 Strategy Exhaustion Threshold</span>
+                </div>
+                <span className="text-wisteria text-[11px] font-bold">ESCALATION ACTIVE</span>
+              </div>
+
+              <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/80 p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-500 block">EXCESSIVE AGENCY GATE</span>
+                  <span className="text-zinc-200 font-semibold">Destructive Action Intercept</span>
+                </div>
+                <span className="text-cherry text-[11px] font-bold">FLAGGED</span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-zinc-500">
-            <Zap className="h-3 w-3 text-amber-400" />
-            <span>Interactive Defense Matrix</span>
+          <div className="mt-4 pt-3 border-t border-zinc-800/60 flex items-center justify-between font-mono text-[11px] text-zinc-500">
+            <span>Deterministic Agent Sandbox</span>
+            <span className="text-zinc-400">Zero Uninspected Dispatches</span>
           </div>
         </div>
       </div>

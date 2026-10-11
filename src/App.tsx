@@ -1,24 +1,30 @@
 import { useState } from 'react';
-import { HeaderBar } from './components/HeaderBar';
-import { EventTimeline } from './components/EventTimeline';
-import { ComparisonPanel } from './components/ComparisonPanel';
+import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
+import { Dashboard } from './components/Dashboard';
+import { OwaspView } from './components/OwaspView';
+import { RegressionView } from './components/RegressionView';
+import { TraceView } from './components/TraceView';
+import { FirewallView } from './components/FirewallView';
+import { MutatorView } from './components/MutatorView';
+import { QuarantineView } from './components/QuarantineView';
+import { PermissionsView } from './components/PermissionsView';
 import { RegressionModal } from './components/RegressionModal';
-import { AdaptiveScanModal } from './components/AdaptiveScanModal.tsx';
-import { PermissionsDrawer } from './components/PermissionsDrawer.tsx';
-import { Dashboard } from './components/Dashboard.tsx';
+import { AdaptiveScanModal } from './components/AdaptiveScanModal';
+import { PermissionsDrawer } from './components/PermissionsDrawer';
 import { MOCK_SCENARIOS, MOCK_AGENTS } from './data/mockScenarios';
-import { type Scenario, formatToolCall } from './types/scenario';
-import { executeAdaptiveScan } from './routes/scanRoutes.ts';
-import { Bot, AlertTriangle, ShieldCheck, Layers, Zap, Wrench } from 'lucide-react';
+import type { Scenario } from './types/scenario';
+import type { NavView } from './types/navigation';
+import { executeAdaptiveScan } from './routes/scanRoutes';
 
 function App() {
+  const [activeView, setActiveView] = useState<NavView>('dashboard');
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(MOCK_SCENARIOS[0]);
   const [protectionMode, setProtectionMode] = useState<boolean>(false);
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
   const [isRegressionOpen, setIsRegressionOpen] = useState<boolean>(false);
   const [isAdaptiveOpen, setIsAdaptiveOpen] = useState<boolean>(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'workspace'>('dashboard');
   const agent = MOCK_AGENTS[0];
 
   const handleToggleProtection = () => {
@@ -49,160 +55,120 @@ function App() {
     }, 100);
   };
 
-  const handleSelectScenarioFromDashboard = (scenarioName: string) => {
-    if (scenarioName.includes('RAG') || scenarioName.includes('Poisoning')) {
-      const adv = MOCK_SCENARIOS.find((s) => s.type === 'adversarial');
-      if (adv) setSelectedScenario(adv);
-      setActiveTab('workspace');
-    } else if (scenarioName.includes('Agency')) {
-      setIsPermissionsOpen(true);
-    } else {
-      const adv = MOCK_SCENARIOS.find((s) => s.type === 'adversarial');
-      if (adv) setSelectedScenario(adv);
-      setActiveTab('workspace');
-    }
-  };
-
-  const isAdversarial = selectedScenario.type === 'adversarial';
-  const formattedCall = formatToolCall(selectedScenario);
-
   return (
-    <div className="h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100 flex flex-col font-sans select-none antialiased">
-      {/* 1. Header Bar 🧭 with ScenarioSelector, Permissions, Adaptive Scan & Regression Suite Button */}
-      <HeaderBar
-        scenarios={MOCK_SCENARIOS}
-        selectedScenario={selectedScenario}
-        onSelectScenario={(sc) => setSelectedScenario(sc)}
+    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100 font-sans select-none antialiased">
+      {/* 1. GitHub-Style Vertical Sidebar Navigation Drawer (w-64) */}
+      <Sidebar
+        activeView={activeView}
+        onChangeView={setActiveView}
         protectionMode={protectionMode}
         onToggleProtection={handleToggleProtection}
-        onRunAudit={handleRunAudit}
-        isAuditing={isAuditing}
-        onOpenRegression={() => setIsRegressionOpen(true)}
-        onOpenAdaptive={() => setIsAdaptiveOpen(true)}
-        onOpenPermissions={() => setIsPermissionsOpen(true)}
-        activeTab={activeTab}
-        onChangeTab={setActiveTab}
+        agent={agent}
       />
 
-      {/* Target Agent & Active Scenario Context Sub-bar (relative z-30) - shown in workspace mode */}
-      {activeTab === 'workspace' && (
-        <div className="relative z-30 h-8 flex-shrink-0 border-b border-zinc-800/60 bg-zinc-950/80 px-4 sm:px-6 flex items-center justify-between text-[11px] text-zinc-400">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex items-center gap-1.5 font-mono">
-              <Bot className="h-3.5 w-3.5 text-zinc-400" />
-              <span className="text-zinc-500">Agent:</span>
-              <span className="font-semibold text-zinc-300">{agent.name}</span>
-              <span className="text-zinc-500">({agent.id})</span>
-              <button
-                type="button"
-                onClick={() => setIsPermissionsOpen(true)}
-                className="ml-1 text-[10px] text-amber-400 hover:text-amber-300 underline font-mono flex items-center gap-0.5 cursor-pointer"
-                title="Audit Permissions (Excessive Agency)"
-              >
-                <Wrench className="h-2.5 w-2.5" />
-                Audit
-              </button>
-            </div>
+      {/* 2. Main Right Content Pane */}
+      <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
+        {/* Minimalist TopBar with Breadcrumbs, Scenario Selector & Controls */}
+        <TopBar
+          activeView={activeView}
+          scenarios={MOCK_SCENARIOS}
+          selectedScenario={selectedScenario}
+          onSelectScenario={(sc) => setSelectedScenario(sc)}
+          protectionMode={protectionMode}
+          onToggleProtection={handleToggleProtection}
+          onRunAudit={() => {
+            setActiveView('trace');
+            handleRunAudit();
+          }}
+          isAuditing={isAuditing}
+        />
 
-            <span className="hidden sm:inline text-zinc-700">|</span>
-
-            <div className="hidden sm:flex items-center gap-1.5 font-mono truncate">
-              <span className="text-zinc-500">Target Tool:</span>
-              <span className={isAdversarial ? 'text-rose-400 font-semibold' : 'text-emerald-400 font-semibold'}>
-                {formattedCall}
-              </span>
-              <span className="text-zinc-600">
-                ({isAdversarial ? 'Restricted' : 'Allowed'})
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 font-mono">
-            {/* Quick Trigger for Feature 1 Adaptive Mutator */}
-            <button
-              type="button"
-              onClick={() => setIsAdaptiveOpen(true)}
-              className="hidden md:flex items-center gap-1 rounded bg-zinc-900 border border-amber-800/60 px-1.5 py-0.5 text-[10px] text-amber-300 hover:text-amber-200 hover:border-amber-600 transition"
-              title="Open Feature 1 Autonomous Attack Discovery Modal"
-            >
-              <Zap className="h-3 w-3 fill-current text-amber-400" />
-              <span>Mutator: {protectionMode ? 'Escalated Guard' : 'Bypass Sim'}</span>
-            </button>
-
-            {/* Quick Trigger for Regression Matrix */}
-            <button
-              type="button"
-              onClick={() => setIsRegressionOpen(true)}
-              className="hidden md:flex items-center gap-1 rounded bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-300 hover:text-emerald-300 hover:border-emerald-700/60 transition"
-            >
-              <Layers className="h-3 w-3 text-emerald-400" />
-              <span>Suite: 100% Compliant</span>
-            </button>
-
-            <span className="text-zinc-500">Mode:</span>
-            {isAdversarial ? (
-              <span className="inline-flex items-center gap-1 text-rose-400 font-medium">
-                <AlertTriangle className="h-3 w-3" />
-                Adversarial Attack
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-                <ShieldCheck className="h-3 w-3" />
-                Benign Task
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Main Single-Screen Workspace / Command Center View (relative z-10) */}
-      {activeTab === 'dashboard' ? (
-        <main className="relative z-10 flex-1 min-h-0 overflow-hidden">
-          <Dashboard
-            isSecured={protectionMode}
-            onToggleSecured={handleToggleProtection}
-            onSelectScenarioRow={handleSelectScenarioFromDashboard}
-          />
-        </main>
-      ) : (
-        <main className="relative z-10 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 overflow-hidden">
-          {/* 2. Multi-Stage Event Trace Timeline ⏱️ (Left Panel - Block 3 & 5 Export) */}
-          <section className="lg:col-span-6 h-full min-h-0 overflow-hidden">
-            <EventTimeline
-              scenario={selectedScenario}
-              protectionMode={protectionMode}
-              isAuditing={isAuditing}
-              onAuditFinished={handleAuditFinished}
-              onReplayAgainstDefenses={handleReplayAgainstDefenses}
+        {/* 3. Dedicated 8 Full-Screen Stage Views (Decluttered, Zero Crowding) */}
+        <main className="relative flex-1 min-h-0 overflow-hidden">
+          {/* [Primary Section] */}
+          {activeView === 'dashboard' && (
+            <Dashboard
+              isSecured={protectionMode}
+              onToggleSecured={handleToggleProtection}
+              onChangeView={setActiveView}
             />
-          </section>
+          )}
 
-          {/* 3. Before vs. After Comparison 🛡️ (Right Panel - Block 4) */}
-          <section className="lg:col-span-6 h-full min-h-0 overflow-hidden">
-            <ComparisonPanel
+          {activeView === 'owasp' && (
+            <OwaspView
+              protectionMode={protectionMode}
+              onNavigateView={setActiveView}
+            />
+          )}
+
+          {activeView === 'regression' && (
+            <RegressionView
+              scenarios={MOCK_SCENARIOS}
+            />
+          )}
+
+          {/* [Execution & Tracing Section] */}
+          {activeView === 'trace' && (
+            <TraceView
               scenario={selectedScenario}
               agent={agent}
               protectionMode={protectionMode}
+              isAuditing={isAuditing}
+              onRunAudit={handleRunAudit}
+              onAuditFinished={handleAuditFinished}
+              onReplayAgainstDefenses={handleReplayAgainstDefenses}
             />
-          </section>
-        </main>
-      )}
+          )}
 
-      {/* 4. Regression Testing Suite Modal (Block 5) */}
+          {activeView === 'firewall' && (
+            <FirewallView
+              scenario={selectedScenario}
+              agent={agent}
+              protectionMode={protectionMode}
+              onToggleProtection={handleToggleProtection}
+              onReplayAgainstDefenses={handleReplayAgainstDefenses}
+            />
+          )}
+
+          {/* [Attack Discovery Section] */}
+          {activeView === 'mutator' && (
+            <MutatorView
+              protectionMode={protectionMode}
+              onToggleProtection={handleToggleProtection}
+            />
+          )}
+
+          {activeView === 'quarantine' && (
+            <QuarantineView
+              protectionMode={protectionMode}
+            />
+          )}
+
+          {/* [Privilege & Governance Section] */}
+          {activeView === 'permissions' && (
+            <PermissionsView
+              protectionMode={protectionMode}
+              onToggleProtection={handleToggleProtection}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* Regression Suite Modal (Accessible when needed) */}
       <RegressionModal
         scenarios={MOCK_SCENARIOS}
         isOpen={isRegressionOpen}
         onClose={() => setIsRegressionOpen(false)}
       />
 
-      {/* 5. Feature 1: Autonomous Attack Discovery / Adaptive Mutator Modal */}
+      {/* Adaptive Scan Modal (preserved for compatibility) */}
       <AdaptiveScanModal
         isOpen={isAdaptiveOpen}
         onClose={() => setIsAdaptiveOpen(false)}
         initialProtectionMode={protectionMode}
       />
 
-      {/* 6. Tool and Permission Auditing (Excessive Agency) Slide-over Drawer */}
+      {/* Tool and Permission Auditing Drawer (preserved for compatibility) */}
       <PermissionsDrawer
         isOpen={isPermissionsOpen}
         onClose={() => setIsPermissionsOpen(false)}
